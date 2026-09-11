@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Qube Admin Login</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="admin-page">
+
+        <div class="admin-login-card">
+
+            <div class="admin-logo">
+                Q
+            </div>
+
+            <p class="admin-label">
+                PRIVATE AREA
+            </p>
+
+            <h1>
+                Admin Login
+            </h1>
+
+            <p class="admin-description">
+                Sign in to access your Qube portfolio dashboard.
+            </p>
+
+
+            <!-- LOGIN FORM -->
+
+            <form id="adminLoginForm">
+
+                <div class="admin-field">
+
+                    <label for="adminEmail">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="adminEmail"
+                        placeholder="Admin email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="admin-field">
+
+                    <label for="adminPassword">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="adminPassword"
+                        placeholder="Admin password"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="admin-login-button"
+                >
+                    Continue →
+                </button>
+
+            </form>
+
+
+            <!-- OTP FORM -->
+
+            <form
+                id="otpForm"
+                style="display: none;"
+            >
+
+                <div class="otp-icon">
+                    ✉
+                </div>
+
+                <h2>
+                    Check Your Email
+                </h2>
+
+                <p class="admin-description">
+                    We've sent a 6-digit verification code
+                    to your admin email.
+                </p>
+
+
+                <!-- OTP BOXES -->
+
+                <div class="otp-field">
+
+                    <label>
+                        Verification Code
+                    </label>
+
+                    <div class="otp-inputs">
+
+                        <input
+                            type="text"
+                            class="otp-box"
+                            maxlength="1"
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                            aria-label="OTP digit 1"
+                        >
+
+                        <input
+                            type="text"
+                            class="otp-box"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="OTP digit 2"
+                        >
+
+                        <input
+                            type="text"
+                            class="otp-box"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="OTP digit 3"
+                        >
+
+                        <input
+                            type="text"
+                            class="otp-box"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="OTP digit 4"
+                        >
+
+                        <input
+                            type="text"
+                            class="otp-box"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="OTP digit 5"
+                        >
+
+                        <input
+                            type="text"
+                            class="otp-box"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="OTP digit 6"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="admin-login-button"
+                >
+                    Verify OTP →
+                </button>
+
+            </form>
+
+
+            <p
+                id="adminMessage"
+                class="admin-message"
+            ></p>
+
+
+            <a
+                href="index.html"
+                class="back-to-site"
+            >
+                ← Back to Portfolio
+            </a>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const adminLoginForm =
+            document.getElementById("adminLoginForm");
+
+        const otpForm =
+            document.getElementById("otpForm");
+
+        const adminMessage =
+            document.getElementById("adminMessage");
+
+
+        // ===============================
+        // OTP INPUT BOXES
+        // ===============================
+
+        const otpBoxes =
+            document.querySelectorAll(".otp-box");
+
+
+        otpBoxes.forEach(function(box, index) {
+
+            box.addEventListener(
+                "input",
+                function() {
+
+                    /*
+                     * Allow numbers only
+                     */
+
+                    this.value =
+                        this.value.replace(
+                            /[^0-9]/g,
+                            ""
+                        );
+
+
+                    /*
+                     * Automatically move
+                     * to the next box
+                     */
+
+                    if (
+                        this.value &&
+                        index < otpBoxes.length - 1
+                    ) {
+
+                        otpBoxes[index + 1].focus();
+
+                    }
+
+                }
+            );
+
+
+            box.addEventListener(
+                "keydown",
+                function(event) {
+
+                    /*
+                     * Backspace:
+                     * move to previous box
+                     */
+
+                    if (
+                        event.key === "Backspace" &&
+                        !this.value &&
+                        index > 0
+                    ) {
+
+                        otpBoxes[index - 1].focus();
+
+                    }
+
+
+                    /*
+                     * Arrow left
+                     */
+
+                    if (
+                        event.key === "ArrowLeft" &&
+                        index > 0
+                    ) {
+
+                        otpBoxes[index - 1].focus();
+
+                    }
+
+
+                    /*
+                     * Arrow right
+                     */
+
+                    if (
+                        event.key === "ArrowRight" &&
+                        index < otpBoxes.length - 1
+                    ) {
+
+                        otpBoxes[index + 1].focus();
+
+                    }
+
+                }
+            );
+
+
+            /*
+             * Select existing digit
+             * when the box receives focus
+             */
+
+            box.addEventListener(
+                "focus",
+                function() {
+
+                    this.select();
+
+                }
+            );
+
+        });
+
+
+        // ===============================
+        // PASTE OTP
+        // ===============================
+
+        otpBoxes[0].addEventListener(
+            "paste",
+            function(event) {
+
+                event.preventDefault();
+
+
+                const pastedText =
+                    (
+                        event.clipboardData ||
+                        window.clipboardData
+                    )
+                    .getData("text")
+                    .replace(
+                        /[^0-9]/g,
+                        ""
+                    )
+                    .slice(0, 6);
+
+
+                pastedText
+                    .split("")
+                    .forEach(
+                        function(digit, index) {
+
+                            if (otpBoxes[index]) {
+
+                                otpBoxes[index].value =
+                                    digit;
+
+                            }
+
+                        }
+                    );
+
+
+                /*
+                 * Focus the last filled box
+                 */
+
+                if (pastedText.length > 0) {
+
+                    const focusIndex =
+                        Math.min(
+                            pastedText.length,
+                            otpBoxes.length
+                        ) - 1;
+
+                    otpBoxes[focusIndex].focus();
+
+                }
+
+            }
+        );
+
+
+        // ===============================
+        // STEP 1 — ADMIN LOGIN
+        // ===============================
+
+        adminLoginForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const email =
+                    document
+                        .getElementById("adminEmail")
+                        .value
+                        .trim();
+
+
+                const password =
+                    document
+                        .getElementById("adminPassword")
+                        .value;
+
+
+                adminMessage.textContent =
+                    "Checking credentials...";
+
+
+                adminMessage.className =
+                    "admin-message";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "https://qube-portfolio-backend.onrender.com/api/admin/login",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+                                    email: email,
+                                    password: password
+                                })
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (response.ok) {
+
+                        adminMessage.textContent =
+                            "OTP sent! Check your email.";
+
+
+                        adminMessage.className =
+                            "admin-message success";
+
+
+                        adminLoginForm.style.display =
+                            "none";
+
+
+                        otpForm.style.display =
+                            "block";
+
+
+                        /*
+                         * Automatically focus
+                         * the first OTP box
+                         */
+
+                        setTimeout(
+                            function() {
+
+                                otpBoxes[0].focus();
+
+                            },
+                            100
+                        );
+
+
+                    } else {
+
+                        adminMessage.textContent =
+                            data.message ||
+                            "Invalid login details.";
+
+
+                        adminMessage.className =
+                            "admin-message error";
+
+                    }
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+
+                    adminMessage.textContent =
+                        "Unable to connect to the server.";
+
+
+                    adminMessage.className =
+                        "admin-message error";
+
+                }
+
+            }
+        );
+
+
+        // ===============================
+        // STEP 2 — VERIFY OTP
+        // ===============================
+
+        otpForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                /*
+                 * Combine the six boxes
+                 * into one OTP
+                 */
+
+                let otp = "";
+
+
+                otpBoxes.forEach(
+                    function(box) {
+
+                        otp += box.value;
+
+                    }
+                );
+
+
+                /*
+                 * Make sure all 6 digits
+                 * have been entered
+                 */
+
+                if (otp.length !== 6) {
+
+                    adminMessage.textContent =
+                        "Please enter all 6 digits.";
+
+
+                    adminMessage.className =
+                        "admin-message error";
+
+
+                    return;
+
+                }
+
+
+                adminMessage.textContent =
+                    "Verifying OTP...";
+
+
+                adminMessage.className =
+                    "admin-message";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "https://qube-portfolio-backend.onrender.com/api/admin/verify-otp",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+                                    otp: otp
+                                })
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (response.ok) {
+
+                        sessionStorage.setItem(
+                            "adminToken",
+                            data.token
+                        );
+
+
+                        adminMessage.textContent =
+                            "Login successful!";
+
+
+                        adminMessage.className =
+                            "admin-message success";
+
+
+                        setTimeout(
+                            function() {
+
+                                window.location.href =
+                                    "admin-dashboard.html";
+
+                            },
+                            800
+                        );
+
+
+                    } else {
+
+                        adminMessage.textContent =
+                            data.message ||
+                            "Invalid OTP.";
+
+
+                        adminMessage.className =
+                            "admin-message error";
+
+                    }
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+
+                    adminMessage.textContent =
+                        "Unable to verify OTP.";
+
+
+                    adminMessage.className =
+                        "admin-message error";
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>

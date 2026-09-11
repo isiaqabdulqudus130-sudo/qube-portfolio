@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Qube Admin Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body class="admin-dashboard-page">
+
+    <!-- =========================
+         ADMIN HEADER
+    ========================== -->
+
+    <header class="admin-header">
+
+        <div class="admin-brand">
+            <span class="admin-brand-mark">Q</span>
+
+            <div>
+                <h2>Qube Admin</h2>
+                <p>Portfolio Dashboard</p>
+            </div>
+        </div>
+
+        <button
+            id="logoutButton"
+            class="admin-logout-button"
+        >
+            Logout
+        </button>
+
+    </header>
+
+
+    <!-- =========================
+         DASHBOARD MAIN
+    ========================== -->
+
+    <main class="admin-dashboard">
+
+        <!-- Welcome -->
+
+        <section class="dashboard-welcome">
+
+            <p class="dashboard-label">
+                ADMIN DASHBOARD
+            </p>
+
+            <h1>
+                Welcome back, Qube.
+            </h1>
+
+            <p>
+                Manage your portfolio messages
+                and keep track of customer enquiries.
+            </p>
+
+        </section>
+
+
+        <!-- =========================
+             STATISTICS
+        ========================== -->
+
+        <section class="dashboard-stats">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ✉
+                </div>
+
+                <div>
+                    <p>Total Messages</p>
+
+                    <h2 id="totalMessages">
+                        0
+                    </h2>
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ●
+                </div>
+
+                <div>
+                    <p>Unread Messages</p>
+
+                    <h2 id="unreadMessages">
+                        0
+                    </h2>
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ✓
+                </div>
+
+                <div>
+                    <p>System Status</p>
+
+                    <h2>
+                        Online
+                    </h2>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             CUSTOMER MESSAGES
+        ========================== -->
+
+        <section class="messages-section">
+
+            <div class="messages-header">
+
+                <div>
+
+                    <p class="dashboard-label">
+                        CUSTOMER MESSAGES
+                    </p>
+
+                    <h2>
+                        Inbox
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="refreshMessages"
+                    class="refresh-button"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+
+            <!-- =========================
+                 SEARCH
+            ========================== -->
+
+            <div class="message-search">
+
+                <input
+                    type="text"
+                    id="messageSearch"
+                    placeholder="Search messages..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <!-- Dashboard notification -->
+
+            <div
+                id="dashboardMessage"
+                class="dashboard-message"
+            ></div>
+
+
+            <!-- Messages -->
+
+            <div
+                id="messagesContainer"
+                class="messages-container"
+            >
+
+                <div class="loading-messages">
+                    Loading messages...
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script>
+
+        const API_URL =
+            "https://qube-portfolio-backend.onrender.com";
+
+
+        /* =========================
+           ADMIN TOKEN
+        ========================== */
+
+        const token =
+            sessionStorage.getItem("adminToken");
+
+
+        if (!token) {
+
+            window.location.href =
+                "admin.html";
+
+        }
+
+
+        /* =========================
+           CHECK ADMIN
+        ========================== */
+
+        async function checkAdmin() {
+
+            if (!token) {
+
+                window.location.href =
+                    "admin.html";
+
+                return;
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/admin/check`,
+                        {
+                            headers: {
+                                "Authorization":
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    sessionStorage.removeItem(
+                        "adminToken"
+                    );
+
+                    window.location.href =
+                        "admin.html";
+
+                    return;
+                }
+
+
+                loadMessages();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Authentication error:",
+                    error
+                );
+
+
+                showDashboardMessage(
+                    "Unable to connect to the server.",
+                    "error"
+                );
+
+            }
+
+        }
+
+
+        /* =========================
+           LOAD MESSAGES
+        ========================== */
+
+        async function loadMessages() {
+
+            const container =
+                document.getElementById(
+                    "messagesContainer"
+                );
+
+
+            /* Get current search */
+
+            const searchInput =
+                document.getElementById(
+                    "messageSearch"
+                );
+
+
+            const searchTerm =
+                searchInput
+                    ? searchInput.value
+                        .trim()
+                        .toLowerCase()
+                    : "";
+
+
+            container.innerHTML = `
+
+                <div class="loading-messages">
+                    Loading messages...
+                </div>
+
+            `;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/admin/messages`,
+                        {
+                            headers: {
+                                "Authorization":
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    if (
+                        response.status === 401
+                    ) {
+
+                        sessionStorage.removeItem(
+                            "adminToken"
+                        );
+
+                        window.location.href =
+                            "admin.html";
+
+                        return;
+
+                    }
+
+
+                    throw new Error(
+                        data.message ||
+                        "Unable to load messages."
+                    );
+
+                }
+
+
+                /* =========================
+                   SEARCH FILTER
+                ========================== */
+
+                const filteredMessages =
+                    data.messages.filter(
+                        function(message) {
+
+                            return (
+
+                                (message.name || "")
+                                    .toLowerCase()
+                                    .includes(
+                                        searchTerm
+                                    )
+
+                                ||
+
+                                (message.email || "")
+                                    .toLowerCase()
+                                    .includes(
+                                        searchTerm
+                                    )
+
+                                ||
+
+                                (message.subject || "")
+                                    .toLowerCase()
+                                    .includes(
+                                        searchTerm
+                                    )
+
+                                ||
+
+                                (message.message || "")
+                                    .toLowerCase()
+                                    .includes(
+                                        searchTerm
+                                    )
+
+                            );
+
+                        }
+                    );
+
+
+                displayMessages(
+                    filteredMessages,
+                    searchTerm
+                );
+
+
+                /* Statistics */
+
+                document.getElementById(
+                    "totalMessages"
+                ).textContent =
+                    data.stats.total;
+
+
+                document.getElementById(
+                    "unreadMessages"
+                ).textContent =
+                    data.stats.unread;
+
+
+            } catch (error) {
+
+                console.error(
+                    "Messages error:",
+                    error
+                );
+
+
+                container.innerHTML = `
+
+                    <div class="empty-messages">
+
+                        <h3>
+                            Unable to load messages
+                        </h3>
+
+                        <p>
+                            Please refresh the dashboard
+                            and try again.
+                        </p>
+
+                    </div>
+
+                `;
+
+            }
+
+        }
+
+
+        /* =========================
+           DISPLAY MESSAGES
+        ========================== */
+
+        function displayMessages(
+            messages,
+            searchTerm = ""
+        ) {
+
+            const container =
+                document.getElementById(
+                    "messagesContainer"
+                );
+
+
+            /* No messages */
+
+            if (!messages.length) {
+
+                if (searchTerm) {
+
+                    container.innerHTML = `
+
+                        <div class="empty-messages">
+
+                            <div class="empty-icon">
+                                🔍
+                            </div>
+
+                            <h3>
+                                No matching messages
+                            </h3>
+
+                            <p>
+                                Try another search term.
+                            </p>
+
+                        </div>
+
+                    `;
+
+                } else {
+
+                    container.innerHTML = `
+
+                        <div class="empty-messages">
+
+                            <div class="empty-icon">
+                                ✉
+                            </div>
+
+                            <h3>
+                                No messages yet
+                            </h3>
+
+                            <p>
+                                Customer messages will
+                                appear here.
+                            </p>
+
+                        </div>
+
+                    `;
+
+                }
+
+                return;
+
+            }
+
+
+            container.innerHTML = "";
+
+
+            /* =========================
+               CREATE MESSAGE CARDS
+            ========================== */
+
+            messages.forEach(
+                function(message) {
+
+                    const card =
+                        document.createElement(
+                            "article"
+                        );
+
+
+                    /* Read / unread class */
+
+                    card.className =
+                        Number(message.is_read) === 1
+                            ? "message-card read"
+                            : "message-card unread";
+
+
+                    const date =
+                        new Date(
+                            message.created_at
+                        );
+
+
+                    card.innerHTML = `
+
+                        <!-- Status -->
+
+                        <div class="message-status">
+
+                            ${
+                                Number(
+                                    message.is_read
+                                ) === 1
+
+                                    ? "✓ Read"
+
+                                    : "● Unread"
+                            }
+
+                        </div>
+
+
+                        <!-- Top -->
+
+                        <div class="message-top">
+
+                            <div class="message-sender">
+
+                                <div class="sender-avatar">
+
+                                    ${getInitial(
+                                        message.name
+                                    )}
+
+                                </div>
+
+
+                                <div>
+
+                                    <h3>
+                                        ${escapeHTML(
+                                            message.name
+                                        )}
+                                    </h3>
+
+
+                                    <a
+                                        href="mailto:${escapeAttribute(
+                                            message.email
+                                        )}"
+                                    >
+                                        ${escapeHTML(
+                                            message.email
+                                        )}
+                                    </a>
+
+                                </div>
+
+                            </div>
+
+
+                            <span class="message-date">
+
+                                ${date.toLocaleString()}
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- Subject -->
+
+                        <div class="message-subject">
+
+                            <strong>
+
+                                ${escapeHTML(
+                                    message.subject ||
+                                    "No subject"
+                                )}
+
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Message -->
+
+                        <div class="message-body">
+
+                            ${escapeHTML(
+                                message.message
+                            )}
+
+                        </div>
+
+
+                        <!-- Actions -->
+
+                        <div class="message-actions">
+
+
+                            ${
+                                Number(
+                                    message.is_read
+                                ) === 0
+
+                                    ? `
+
+                                        <button
+                                            class="mark-read-button"
+                                            onclick="markMessageAsRead(${message.id})"
+                                        >
+
+                                            ✓ Mark as Read
+
+                                        </button>
+
+                                      `
+
+                                    : ""
+                            }
+
+
+                            <!-- Reply -->
+
+                            <a
+                                href="mailto:${escapeAttribute(
+                                    message.email
+                                )}?subject=Re: ${encodeURIComponent(
+                                    message.subject ||
+                                    "Your message"
+                                )}"
+                                class="reply-button"
+                            >
+
+                                Reply
+
+                            </a>
+
+
+                            <!-- Delete -->
+
+                            <button
+                                class="delete-message-button"
+                                onclick="deleteMessage(${message.id})"
+                            >
+
+                                🗑 Delete
+
+                            </button>
+
+
+                        </div>
+
+                    `;
+
+
+                    container.appendChild(
+                        card
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =========================
+           GET INITIAL
+        ========================== */
+
+        function getInitial(name) {
+
+            if (!name) {
+
+                return "Q";
+
+            }
+
+
+            return name
+                .trim()
+                .charAt(0)
+                .toUpperCase();
+
+        }
+
+
+        /* =========================
+           ESCAPE HTML
+        ========================== */
+
+        function escapeHTML(value) {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.textContent =
+                value || "";
+
+
+            return div.innerHTML;
+
+        }
+
+
+        /* =========================
+           ESCAPE ATTRIBUTE
+        ========================== */
+
+        function escapeAttribute(value) {
+
+            return String(value || "")
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#39;"
+                );
+
+        }
+
+
+        /* =========================
+           DASHBOARD MESSAGE
+        ========================== */
+
+        function showDashboardMessage(
+            text,
+            type
+        ) {
+
+            const element =
+                document.getElementById(
+                    "dashboardMessage"
+                );
+
+
+            element.textContent =
+                text;
+
+
+            element.className =
+                `dashboard-message ${type}`;
+
+        }
+
+
+        /* =========================
+           REFRESH
+        ========================== */
+
+        document
+            .getElementById(
+                "refreshMessages"
+            )
+            .addEventListener(
+                "click",
+                loadMessages
+            );
+
+
+        /* =========================
+           LIVE SEARCH
+        ========================== */
+
+        document
+            .getElementById(
+                "messageSearch"
+            )
+            .addEventListener(
+                "input",
+                loadMessages
+            );
+
+
+        /* =========================
+           LOGOUT
+        ========================== */
+
+        document
+            .getElementById(
+                "logoutButton"
+            )
+            .addEventListener(
+                "click",
+                async function logout() {
+
+                    try {
+
+                        await fetch(
+                            `${API_URL}/api/admin/logout`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Authorization":
+                                        `Bearer ${token}`
+                                }
+                            }
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "Logout error:",
+                            error
+                        );
+
+
+                    } finally {
+
+                        sessionStorage.removeItem(
+                            "adminToken"
+                        );
+
+
+                        window.location.href =
+                            "admin.html";
+
+                    }
+
+                }
+            );
+
+
+        /* =========================
+           MARK MESSAGE AS READ
+        ========================== */
+
+        async function markMessageAsRead(
+            messageId
+        ) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/admin/messages/${messageId}/read`,
+                        {
+                            method: "PATCH",
+
+                            headers: {
+                                "Authorization":
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    alert(
+                        data.message ||
+                        "Unable to mark message as read."
+                    );
+
+                    return;
+
+                }
+
+
+                loadMessages();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Mark read error:",
+                    error
+                );
+
+
+                alert(
+                    "Unable to update the message."
+                );
+
+            }
+
+        }
+
+
+        /* =========================
+           DELETE MESSAGE
+        ========================== */
+
+        async function deleteMessage(
+            messageId
+        ) {
+
+            const confirmed =
+                confirm(
+                    "Are you sure you want to delete this message?"
+                );
+
+
+            if (!confirmed) {
+
+                return;
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/admin/messages/${messageId}`,
+                        {
+                            method: "DELETE",
+
+                            headers: {
+                                "Authorization":
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    alert(
+                        data.message ||
+                        "Unable to delete message."
+                    );
+
+                    return;
+
+                }
+
+
+                loadMessages();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Delete message error:",
+                    error
+                );
+
+
+                alert(
+                    "Unable to delete the message."
+                );
+
+            }
+
+        }
+
+
+        /* =========================
+           START DASHBOARD
+        ========================== */
+
+        checkAdmin();
+
+    </script>
+
+</body>
+</html>
